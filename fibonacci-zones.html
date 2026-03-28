@@ -1,0 +1,1186 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fibonacci Zones — Crypto Trading</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap"
+      rel="stylesheet" />
+    <link rel="icon" type="image/png" href="fib.png" /> 
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #0a0a0f;
+        --surface: #111118;
+        --surface2: #16161f;
+        --border: rgba(255, 255, 255, 0.06);
+        --border-bright: rgba(255, 255, 255, 0.12);
+        --text: #e8e6f0;
+        --muted: #7a7890;
+        --premium: #e8593c;
+        --premium-light: #f07050;
+        --premium-dim: rgba(232, 89, 60, 0.12);
+        --discount: #3b8bd4;
+        --discount-light: #5aa3e8;
+        --discount-dim: rgba(59, 139, 212, 0.12);
+        --gold: #c9a84c;
+        --gold-dim: rgba(201, 168, 76, 0.15);
+        --eq: rgba(255, 255, 255, 0.35);
+        --font-display: "Syne", sans-serif;
+        --font-mono: "DM Mono", monospace;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-mono);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* Grid background */
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+        background-size: 40px 40px;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .container {
+        position: relative;
+        z-index: 1;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 60px 24px 80px;
+      }
+
+      /* Header */
+      header {
+        margin-bottom: 64px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .eyebrow {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        font-weight: 400;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--gold);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .eyebrow::before {
+        content: "";
+        display: block;
+        width: 28px;
+        height: 1px;
+        background: var(--gold);
+      }
+
+      h1 {
+        font-family: var(--font-display);
+        font-size: clamp(36px, 6vw, 72px);
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.02em;
+        color: var(--text);
+      }
+
+      h1 em {
+        font-style: normal;
+        color: var(--gold);
+      }
+
+      .subtitle {
+        font-size: 13px;
+        color: var(--muted);
+        max-width: 480px;
+        line-height: 1.7;
+        margin-top: 4px;
+      }
+
+      /* Trend toggle */
+      .toggle-wrap {
+        display: flex;
+        gap: 0;
+        background: var(--surface);
+        border: 1px solid var(--border-bright);
+        border-radius: 10px;
+        padding: 4px;
+        width: fit-content;
+        margin-bottom: 40px;
+      }
+
+      .toggle-btn {
+        font-family: var(--font-display);
+        font-size: 13px;
+        font-weight: 600;
+        padding: 10px 28px;
+        border-radius: 7px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        letter-spacing: 0.04em;
+        background: transparent;
+        color: var(--muted);
+      }
+
+      .toggle-btn.active-up {
+        background: var(--discount);
+        color: #fff;
+        box-shadow: 0 0 20px rgba(59, 139, 212, 0.3);
+      }
+
+      .toggle-btn.active-down {
+        background: var(--premium);
+        color: #fff;
+        box-shadow: 0 0 20px rgba(232, 89, 60, 0.3);
+      }
+
+      /* Main layout */
+      .main-grid {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 24px;
+        align-items: start;
+      }
+
+      @media (max-width: 800px) {
+        .main-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Chart panel */
+      .chart-panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 32px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .chart-panel::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--border-bright),
+          transparent
+        );
+      }
+
+      .chart-title {
+        font-family: var(--font-display);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .chart-title::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+      }
+
+      /* SVG Chart */
+      .fib-chart {
+        width: 100%;
+        display: block;
+      }
+
+      /* Sidebar */
+      .sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .info-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 20px;
+        position: relative;
+        overflow: hidden;
+        transition: border-color 0.2s;
+      }
+
+      .info-card:hover {
+        border-color: var(--border-bright);
+      }
+
+      .info-card.premium-card {
+        border-left: 2px solid var(--premium);
+      }
+      .info-card.discount-card {
+        border-left: 2px solid var(--discount);
+      }
+      .info-card.eq-card {
+        border-left: 2px solid var(--gold);
+      }
+      .info-card.ote-card {
+        border-left: 2px solid var(--gold);
+        background: var(--gold-dim);
+      }
+
+      .card-label {
+        font-family: var(--font-display);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+      }
+
+      .premium-card .card-label {
+        color: var(--premium-light);
+      }
+      .discount-card .card-label {
+        color: var(--discount-light);
+      }
+      .eq-card .card-label {
+        color: var(--gold);
+      }
+      .ote-card .card-label {
+        color: var(--gold);
+      }
+
+      .card-title {
+        font-family: var(--font-display);
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: var(--text);
+      }
+
+      .card-desc {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      /* Levels table */
+      .levels-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      .levels-header {
+        padding: 16px 20px;
+        font-family: var(--font-display);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--muted);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .level-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 20px;
+        border-bottom: 1px solid var(--border);
+        font-size: 12px;
+        transition: background 0.15s;
+      }
+
+      .level-row:last-child {
+        border-bottom: none;
+      }
+      .level-row:hover {
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .level-pct {
+        font-family: var(--font-mono);
+        font-weight: 500;
+        font-size: 13px;
+        color: var(--text);
+        width: 52px;
+      }
+
+      .level-name {
+        color: var(--muted);
+        flex: 1;
+        padding: 0 12px;
+      }
+
+      .level-badge {
+        font-size: 10px;
+        font-family: var(--font-display);
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        padding: 3px 8px;
+        border-radius: 4px;
+      }
+
+      .badge-premium {
+        background: var(--premium-dim);
+        color: var(--premium-light);
+      }
+      .badge-discount {
+        background: var(--discount-dim);
+        color: var(--discount-light);
+      }
+      .badge-eq {
+        background: var(--gold-dim);
+        color: var(--gold);
+      }
+      .badge-ote {
+        background: var(--gold-dim);
+        color: var(--gold);
+        border: 1px solid rgba(201, 168, 76, 0.3);
+      }
+
+      /* Rule banner */
+      .rule-banner {
+        margin-top: 24px;
+        background: var(--surface2);
+        border: 1px solid var(--border-bright);
+        border-radius: 12px;
+        padding: 20px 24px;
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+      }
+
+      .rule-icon {
+        font-size: 20px;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+
+      .rule-text {
+        font-size: 12px;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+      .rule-text strong {
+        color: var(--gold);
+        font-weight: 500;
+      }
+
+      /* Animation for zone transitions */
+      .zone-animated {
+        transition: opacity 0.35s ease;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <div class="eyebrow">Smart Money Concepts</div>
+        <h1>Fibonacci<br /><em>Discount &amp; Premium</em><br />Zones</h1>
+        <p class="subtitle">
+          How to identify where price is cheap or expensive relative to a recent
+          swing — and time your entries accordingly.
+        </p>
+      </header>
+
+      <div class="toggle-wrap">
+        <button
+          class="toggle-btn active-up"
+          id="btn-up"
+          onclick="setTrend('up')"
+        >
+          ↑ Uptrend
+        </button>
+        <button class="toggle-btn" id="btn-down" onclick="setTrend('down')">
+          ↓ Downtrend
+        </button>
+      </div>
+
+      <div class="main-grid">
+        <!-- Chart -->
+        <div class="chart-panel">
+          <div class="chart-title">Fibonacci Retracement</div>
+          <svg
+            class="fib-chart"
+            viewBox="0 0 560 460"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <defs>
+              <marker
+                id="arr"
+                viewBox="0 0 10 10"
+                refX="8"
+                refY="5"
+                markerWidth="5"
+                markerHeight="5"
+                orient="auto-start-reverse"
+              >
+                <path
+                  d="M2 1L8 5L2 9"
+                  fill="none"
+                  stroke="context-stroke"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </marker>
+            </defs>
+
+            <!-- Zone fills -->
+            <rect
+              id="zone-top-fill"
+              x="80"
+              y="40"
+              width="360"
+              height="180"
+              fill="#3b8bd4"
+              opacity="0.08"
+            />
+            <rect
+              id="zone-bot-fill"
+              x="80"
+              y="220"
+              width="360"
+              height="180"
+              fill="#e8593c"
+              opacity="0.08"
+            />
+
+            <!-- Price candles (simplified OHLC bars) -->
+            <!-- Uptrend candle group (visible in uptrend) -->
+            <g id="candles-up" opacity="1" style="transition: opacity 0.35s">
+              <line
+                x1="468"
+                y1="395"
+                x2="468"
+                y2="360"
+                stroke="#3b8bd4"
+                stroke-width="1"
+                opacity="0.5"
+              />
+              <rect
+                x="461"
+                y="360"
+                width="14"
+                height="28"
+                rx="2"
+                fill="#3b8bd4"
+                opacity="0.7"
+              />
+              <line
+                x1="484"
+                y1="375"
+                x2="484"
+                y2="330"
+                stroke="#3b8bd4"
+                stroke-width="1"
+                opacity="0.5"
+              />
+              <rect
+                x="477"
+                y="330"
+                width="14"
+                height="38"
+                rx="2"
+                fill="#3b8bd4"
+                opacity="0.7"
+              />
+              <line
+                x1="500"
+                y1="345"
+                x2="500"
+                y2="280"
+                stroke="#3b8bd4"
+                stroke-width="1"
+                opacity="0.5"
+              />
+              <rect
+                x="493"
+                y="280"
+                width="14"
+                height="58"
+                rx="2"
+                fill="#3b8bd4"
+                opacity="0.7"
+              />
+              <line
+                x1="516"
+                y1="310"
+                x2="516"
+                y2="240"
+                stroke="#3b8bd4"
+                stroke-width="1"
+                opacity="0.5"
+              />
+              <rect
+                x="509"
+                y="240"
+                width="14"
+                height="62"
+                rx="2"
+                fill="#3b8bd4"
+                opacity="0.7"
+              />
+              <line
+                x1="532"
+                y1="270"
+                x2="532"
+                y2="100"
+                stroke="#3b8bd4"
+                stroke-width="1"
+                opacity="0.5"
+              />
+              <rect
+                x="525"
+                y="100"
+                width="14"
+                height="160"
+                rx="2"
+                fill="#3b8bd4"
+                opacity="0.7"
+              />
+              <!-- Retrace candles (red) -->
+              <line
+                x1="548"
+                y1="80"
+                x2="548"
+                y2="140"
+                stroke="#e8593c"
+                stroke-width="1"
+                opacity="0.5"
+              />
+              <rect
+                x="541"
+                y="80"
+                width="14"
+                height="58"
+                rx="2"
+                fill="#e8593c"
+                opacity="0.7"
+              />
+            </g>
+            <!-- Downtrend candle group -->
+            <g id="candles-down" opacity="0" style="transition: opacity 0.35s">
+              <line
+                x1="468"
+                y1="60"
+                x2="468"
+                y2="100"
+                stroke="#e8593c"
+                stroke-width="1"
+                opacity="0.5"
+              />
+              <rect
+                x="461"
+                y="72"
+                width="14"
+                height="28"
+                rx="2"
+                fill="#e8593c"
+                opacity="0.7"
+              />
+              <line
+                x1="484"
+                y1="80"
+                x2="484"
+                y2="140"
+                stroke="#e8593c"
+                stroke-width="1"
+                opacity="0.5"
+              />
+              <rect
+                x="477"
+                y="90"
+                width="14"
+                height="44"
+                rx="2"
+                fill="#e8593c"
+                opacity="0.7"
+              />
+              <line
+                x1="500"
+                y1="115"
+                x2="500"
+                y2="180"
+                stroke="#e8593c"
+                stroke-width="1"
+                opacity="0.5"
+              />
+              <rect
+                x="493"
+                y="125"
+                width="14"
+                height="50"
+                rx="2"
+                fill="#e8593c"
+                opacity="0.7"
+              />
+              <line
+                x1="516"
+                y1="165"
+                x2="516"
+                y2="250"
+                stroke="#e8593c"
+                stroke-width="1"
+                opacity="0.5"
+              />
+              <rect
+                x="509"
+                y="175"
+                width="14"
+                height="66"
+                rx="2"
+                fill="#e8593c"
+                opacity="0.7"
+              />
+              <line
+                x1="532"
+                y1="230"
+                x2="532"
+                y2="370"
+                stroke="#e8593c"
+                stroke-width="1"
+                opacity="0.5"
+              />
+              <rect
+                x="525"
+                y="240"
+                width="14"
+                height="120"
+                rx="2"
+                fill="#e8593c"
+                opacity="0.7"
+              />
+              <!-- Retrace candles (green) -->
+              <line
+                x1="548"
+                y1="400"
+                x2="548"
+                y2="340"
+                stroke="#3b8bd4"
+                stroke-width="1"
+                opacity="0.5"
+              />
+              <rect
+                x="541"
+                y="340"
+                width="14"
+                height="55"
+                rx="2"
+                fill="#3b8bd4"
+                opacity="0.7"
+              />
+            </g>
+
+            <!-- Fib lines -->
+            <line
+              x1="80"
+              y1="40"
+              x2="460"
+              y2="40"
+              stroke="rgba(255,255,255,0.5)"
+              stroke-width="1.5"
+            />
+            <line
+              x1="80"
+              y1="81"
+              x2="460"
+              y2="81"
+              stroke="rgba(255,255,255,0.2)"
+              stroke-width="0.8"
+              stroke-dasharray="5 4"
+            />
+            <line
+              x1="80"
+              y1="130"
+              x2="460"
+              y2="130"
+              stroke="rgba(255,255,255,0.2)"
+              stroke-width="0.8"
+              stroke-dasharray="5 4"
+            />
+            <line
+              x1="80"
+              y1="220"
+              x2="460"
+              y2="220"
+              stroke="rgba(255,255,255,0.4)"
+              stroke-width="1.5"
+              stroke-dasharray="7 4"
+            />
+            <line
+              x1="80"
+              y1="274"
+              x2="460"
+              y2="274"
+              stroke="#c9a84c"
+              stroke-width="1.2"
+              stroke-dasharray="5 4"
+              opacity="0.9"
+            />
+            <line
+              x1="80"
+              y1="328"
+              x2="460"
+              y2="328"
+              stroke="#c9a84c"
+              stroke-width="0.8"
+              stroke-dasharray="5 4"
+              opacity="0.7"
+            />
+            <line
+              x1="80"
+              y1="400"
+              x2="460"
+              y2="400"
+              stroke="rgba(255,255,255,0.5)"
+              stroke-width="1.5"
+            />
+
+            <!-- Level % labels -->
+            <text
+              font-family="'DM Mono',monospace"
+              font-size="11"
+              fill="rgba(255,255,255,0.5)"
+              x="72"
+              y="44"
+              text-anchor="end"
+            >
+              0%
+            </text>
+            <text
+              font-family="'DM Mono',monospace"
+              font-size="11"
+              fill="rgba(255,255,255,0.3)"
+              x="72"
+              y="85"
+              text-anchor="end"
+            >
+              23.6%
+            </text>
+            <text
+              font-family="'DM Mono',monospace"
+              font-size="11"
+              fill="rgba(255,255,255,0.3)"
+              x="72"
+              y="134"
+              text-anchor="end"
+            >
+              38.2%
+            </text>
+            <text
+              font-family="'DM Mono',monospace"
+              font-size="11"
+              fill="rgba(255,255,255,0.5)"
+              x="72"
+              y="224"
+              text-anchor="end"
+            >
+              50%
+            </text>
+            <text
+              font-family="'DM Mono',monospace"
+              font-size="11"
+              fill="#c9a84c"
+              x="72"
+              y="278"
+              text-anchor="end"
+            >
+              61.8%
+            </text>
+            <text
+              font-family="'DM Mono',monospace"
+              font-size="11"
+              fill="#c9a84c"
+              x="72"
+              y="332"
+              text-anchor="end"
+            >
+              79%
+            </text>
+            <text
+              font-family="'DM Mono',monospace"
+              font-size="11"
+              fill="rgba(255,255,255,0.5)"
+              x="72"
+              y="404"
+              text-anchor="end"
+            >
+              100%
+            </text>
+
+            <!-- Zone labels inside chart -->
+            <text
+              id="zone-top-label"
+              font-family="'Syne',sans-serif"
+              font-size="13"
+              font-weight="700"
+              fill="#5aa3e8"
+              x="250"
+              y="120"
+              text-anchor="middle"
+              letter-spacing="0.1em"
+            >
+              DISCOUNT ZONE
+            </text>
+            <text
+              id="zone-bot-label"
+              font-family="'Syne',sans-serif"
+              font-size="13"
+              font-weight="700"
+              fill="#f07050"
+              x="250"
+              y="320"
+              text-anchor="middle"
+              letter-spacing="0.1em"
+            >
+              PREMIUM ZONE
+            </text>
+
+            <!-- OTE bracket -->
+            <line
+              x1="62"
+              y1="274"
+              x2="62"
+              y2="328"
+              stroke="#c9a84c"
+              stroke-width="1"
+              opacity="0.6"
+            />
+            <line
+              x1="62"
+              y1="274"
+              x2="68"
+              y2="274"
+              stroke="#c9a84c"
+              stroke-width="1"
+              opacity="0.6"
+            />
+            <line
+              x1="62"
+              y1="328"
+              x2="68"
+              y2="328"
+              stroke="#c9a84c"
+              stroke-width="1"
+              opacity="0.6"
+            />
+            <text
+              font-family="'Syne',sans-serif"
+              font-size="9"
+              font-weight="700"
+              fill="#c9a84c"
+              x="58"
+              y="305"
+              text-anchor="end"
+              letter-spacing="0.08em"
+            >
+              OTE
+            </text>
+
+            <!-- Equilibrium label -->
+            <text
+              font-family="'DM Mono',monospace"
+              font-size="10"
+              fill="rgba(255,255,255,0.35)"
+              x="250"
+              y="215"
+              text-anchor="middle"
+            >
+              — equilibrium —
+            </text>
+
+            <!-- Swing labels -->
+            <text
+              id="swing-top"
+              font-family="'DM Mono',monospace"
+              font-size="10"
+              fill="rgba(255,255,255,0.4)"
+              x="250"
+              y="30"
+              text-anchor="middle"
+            >
+              Swing High
+            </text>
+            <text
+              id="swing-bot"
+              font-family="'DM Mono',monospace"
+              font-size="10"
+              fill="rgba(255,255,255,0.4)"
+              x="250"
+              y="418"
+              text-anchor="middle"
+            >
+              Swing Low
+            </text>
+
+            <!-- Draw direction arrow -->
+            <line
+              id="draw-arrow"
+              x1="460"
+              y1="400"
+              x2="460"
+              y2="48"
+              stroke="#3b8bd4"
+              stroke-width="1.5"
+              stroke-dasharray="4 3"
+              marker-end="url(#arr)"
+              marker-start="url(#arr)"
+              opacity="0.5"
+            />
+            <text
+              id="draw-label"
+              font-family="'DM Mono',monospace"
+              font-size="9"
+              fill="#5aa3e8"
+              x="450"
+              y="230"
+              text-anchor="end"
+              transform="rotate(-90,450,230)"
+            >
+              Draw: Low → High
+            </text>
+          </svg>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+          <div id="discount-card" class="info-card discount-card">
+            <div class="card-label">Below 50%</div>
+            <div class="card-title">Discount Zone</div>
+            <div class="card-desc">
+              Price is "cheap" relative to the range. In an uptrend, this is
+              where you look for long entries — the market is pulling back into
+              value.
+            </div>
+          </div>
+
+          <div id="premium-card" class="info-card premium-card">
+            <div class="card-label">Above 50%</div>
+            <div class="card-title">Premium Zone</div>
+            <div class="card-desc">
+              Price is "expensive" relative to the range. In an uptrend, avoid
+              buying here. In a downtrend, this is where you look for shorts.
+            </div>
+          </div>
+
+          <div class="info-card eq-card">
+            <div class="card-label">Midpoint</div>
+            <div class="card-title">50% — Equilibrium</div>
+            <div class="card-desc">
+              The dividing line between premium and discount. Neither cheap nor
+              expensive — the fair value of the swing range.
+            </div>
+          </div>
+
+          <div class="info-card ote-card">
+            <div class="card-label">Best Entry</div>
+            <div class="card-title">OTE — 61.8% to 79%</div>
+            <div class="card-desc">
+              Optimal Trade Entry. Where institutions are believed to place
+              orders. Best risk-to-reward within the discount zone.
+            </div>
+          </div>
+
+          <div class="levels-card">
+            <div class="levels-header">All Fib Levels</div>
+            <div class="level-row">
+              <span class="level-pct">0%</span
+              ><span class="level-name">Swing anchor</span
+              ><span class="level-badge badge-eq">Origin</span>
+            </div>
+            <div class="level-row">
+              <span class="level-pct">23.6%</span
+              ><span class="level-name">Shallow retrace</span
+              ><span id="badge-236" class="level-badge badge-discount"
+                >Discount</span
+              >
+            </div>
+            <div class="level-row">
+              <span class="level-pct">38.2%</span
+              ><span class="level-name">Moderate retrace</span
+              ><span id="badge-382" class="level-badge badge-discount"
+                >Discount</span
+              >
+            </div>
+            <div class="level-row">
+              <span class="level-pct">50%</span
+              ><span class="level-name">Equilibrium</span
+              ><span class="level-badge badge-eq">50/50</span>
+            </div>
+            <div class="level-row">
+              <span class="level-pct">61.8%</span
+              ><span class="level-name">Golden ratio</span
+              ><span id="badge-618" class="level-badge badge-ote">OTE</span>
+            </div>
+            <div class="level-row">
+              <span class="level-pct">79%</span
+              ><span class="level-name">Deep retrace</span
+              ><span id="badge-79" class="level-badge badge-ote">OTE</span>
+            </div>
+            <div class="level-row">
+              <span class="level-pct">100%</span
+              ><span class="level-name">Swing anchor</span
+              ><span class="level-badge badge-eq">Origin</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="rule-banner">
+        <div class="rule-icon">⚡</div>
+        <div class="rule-text" id="rule-text">
+          <strong>Uptrend rule:</strong> Draw Fibonacci from the Swing Low →
+          Swing High. Wait for price to retrace into the
+          <strong>discount zone (below 50%)</strong>. Look for confirmation
+          signals near the OTE (61.8–79%) before entering long. Stop below the
+          100% level, target previous highs.
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let trend = "up";
+
+      function setTrend(t) {
+        trend = t;
+        const isUp = t === "up";
+
+        // Toggle buttons
+        const btnUp = document.getElementById("btn-up");
+        const btnDown = document.getElementById("btn-down");
+        btnUp.className = "toggle-btn" + (isUp ? " active-up" : "");
+        btnDown.className = "toggle-btn" + (!isUp ? " active-down" : "");
+
+        // Zone fills & labels
+        document
+          .getElementById("zone-top-fill")
+          .setAttribute("fill", isUp ? "#3b8bd4" : "#e8593c");
+        document
+          .getElementById("zone-bot-fill")
+          .setAttribute("fill", isUp ? "#e8593c" : "#3b8bd4");
+        document.getElementById("zone-top-label").textContent = isUp
+          ? "DISCOUNT ZONE"
+          : "PREMIUM ZONE";
+        document.getElementById("zone-bot-label").textContent = isUp
+          ? "PREMIUM ZONE"
+          : "DISCOUNT ZONE";
+        document
+          .getElementById("zone-top-label")
+          .setAttribute("fill", isUp ? "#5aa3e8" : "#f07050");
+        document
+          .getElementById("zone-bot-label")
+          .setAttribute("fill", isUp ? "#f07050" : "#5aa3e8");
+
+        // Draw arrow direction
+        const arr = document.getElementById("draw-arrow");
+        const lbl = document.getElementById("draw-label");
+        if (isUp) {
+          arr.setAttribute("x1", "460");
+          arr.setAttribute("y1", "400");
+          arr.setAttribute("x2", "460");
+          arr.setAttribute("y2", "48");
+          arr.setAttribute("stroke", "#3b8bd4");
+          lbl.textContent = "Draw: Low → High";
+          lbl.setAttribute("fill", "#5aa3e8");
+        } else {
+          arr.setAttribute("x1", "460");
+          arr.setAttribute("y1", "48");
+          arr.setAttribute("x2", "460");
+          arr.setAttribute("y2", "400");
+          arr.setAttribute("stroke", "#e8593c");
+          lbl.textContent = "Draw: High → Low";
+          lbl.setAttribute("fill", "#f07050");
+        }
+
+        // Swing labels
+        document.getElementById("swing-top").textContent = isUp
+          ? "Swing High (100%)"
+          : "Swing High (0% anchor)";
+        document.getElementById("swing-bot").textContent = isUp
+          ? "Swing Low (0% anchor)"
+          : "Swing Low (100%)";
+
+        // Candles
+        document.getElementById("candles-up").style.opacity = isUp ? "1" : "0";
+        document.getElementById("candles-down").style.opacity = isUp
+          ? "0"
+          : "1";
+
+        // Sidebar cards
+        const discCard = document.getElementById("discount-card");
+        const premCard = document.getElementById("premium-card");
+        if (isUp) {
+          discCard.querySelector(".card-desc").textContent =
+            'Price is "cheap" relative to the range. In an uptrend, this is where you look for long entries — the market is pulling back into value.';
+          premCard.querySelector(".card-desc").textContent =
+            'Price is "expensive" relative to the range. In an uptrend, avoid buying here. Wait for a move back into discount.';
+        } else {
+          discCard.querySelector(".card-desc").textContent =
+            'Price is "cheap" — but in a downtrend this means avoid buying. The retracement into this zone is likely a bear trap.';
+          premCard.querySelector(".card-desc").textContent =
+            'Price is "expensive" relative to the range. In a downtrend, retracements into the premium zone are where you look for short entries.';
+        }
+
+        // Badges for OTE — flip meaning in downtrend
+        const b618 = document.getElementById("badge-618");
+        const b79 = document.getElementById("badge-79");
+        const b236 = document.getElementById("badge-236");
+        const b382 = document.getElementById("badge-382");
+        if (isUp) {
+          b236.className = "level-badge badge-discount";
+          b236.textContent = "Discount";
+          b382.className = "level-badge badge-discount";
+          b382.textContent = "Discount";
+          b618.className = "level-badge badge-ote";
+          b618.textContent = "OTE";
+          b79.className = "level-badge badge-ote";
+          b79.textContent = "OTE";
+        } else {
+          b236.className = "level-badge badge-premium";
+          b236.textContent = "Premium";
+          b382.className = "level-badge badge-premium";
+          b382.textContent = "Premium";
+          b618.className = "level-badge badge-ote";
+          b618.textContent = "OTE Short";
+          b79.className = "level-badge badge-ote";
+          b79.textContent = "OTE Short";
+        }
+
+        // Rule banner
+        document.getElementById("rule-text").innerHTML = isUp
+          ? "<strong>Uptrend rule:</strong> Draw Fibonacci from the Swing Low → Swing High. Wait for price to retrace into the <strong>discount zone (below 50%)</strong>. Look for confirmation signals near the OTE (61.8–79%) before entering long. Stop below the 100% level, target previous highs."
+          : "<strong>Downtrend rule:</strong> Draw Fibonacci from the Swing High → Swing Low. Wait for price to retrace into the <strong>premium zone (above 50%)</strong>. Look for confirmation signals near the OTE (61.8–79%) before entering short. Stop above the 0% level, target previous lows.";
+      }
+    </script>
+  </body>
+</html>
